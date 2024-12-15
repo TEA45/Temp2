@@ -13,31 +13,28 @@ def get_internal_name_for_idp_migration_status(SystemInfo, SysLog):
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "X-SunGard-IdP-API-Key": "DEV547-D1-CSMR_APIKey",
-        "Authorization": "Bearer c482766b9a19d5e97acc68416c015527"
+        "X-SunGard-IdP-API-Key": SystemInfo.idpApiKey,  # From config.ini
+        "Authorization": SystemInfo.idpAuthorization  # From config.ini
     }
-
-    # Query parameters
-    params = {"searchCrit": "loginName eq 'Migration Status'"}
 
     try:
         # Make the API call
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
             SysLog.logInfo("Successfully retrieved data from IDP API.")
             data = response.json()
 
-            # Assuming the response contains 'fields' with internal names
-            if "fields" in data:
-                for field in data["fields"]:
-                    if field.get("name") == "Migration Status":
-                        internal_name = field.get("internalName")
-                        SysLog.logInfo(f"Internal name for 'Migration Status': {internal_name}")
-                        return internal_name
+            # Search for the field with title 'MigrationStatus'
+            for field in data:
+                if field.get("title") == "MigrationStatus":
+                    internal_name = field.get("name")
+                    SysLog.logInfo(f"Internal name for 'Migration Status': {internal_name}")
+                    return internal_name
 
             SysLog.logInfo("'Migration Status' not found in the response.")
             return None
+
         else:
             SysLog.logError(f"Failed to fetch data. Status Code: {response.status_code}, Response: {response.text}")
             return None
